@@ -1,0 +1,5 @@
+six
+azure-iot-device~=2.7.0
+adafruit-blinka
+rpi.gpio
+adafruit-circuitpython-vl53l0x
