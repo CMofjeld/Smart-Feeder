@@ -9,7 +9,13 @@
           "settings": {
             "minDockerVersion": "v1.25",
             "loggingOptions": "",
-            "registryCredentials": {}
+            "registryCredentials": {
+              "smartfeedercregistry": {
+                "username": "$CONTAINER_REGISTRY_USERNAME_smartfeedercregistry",
+                "password": "$CONTAINER_REGISTRY_PASSWORD_smartfeedercregistry",
+                "address": "smartfeedercregistry.azurecr.io"
+              }
+            }
           }
         },
         "systemModules": {
@@ -50,13 +56,39 @@
             }
           }
         },
-        "modules": {}
+        "modules": {
+          "ObjectDetectionAnalyzer": {
+            "version": "1.0",
+            "type": "docker",
+            "status": "running",
+            "restartPolicy": "always",
+            "settings": {
+              "image": "${MODULES.ObjectDetectionAnalyzer.debug}",
+              "createOptions": {
+                "ExposedPorts": {
+                  "5678/tcp": {}
+                },
+                "HostConfig": {
+                  "PortBindings": {
+                    "5678/tcp": [
+                      {
+                        "HostPort": "5678"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     },
     "$edgeHub": {
       "properties.desired": {
         "schemaVersion": "1.1",
-        "routes": {},
+        "routes": {
+          "ObjectDetectionAnalyzerToIoTHub": "FROM /messages/modules/ObjectDetectionAnalyzer/outputs/* INTO $upstream"
+        },
         "storeAndForwardConfiguration": {
           "timeToLiveSecs": 7200
         }
