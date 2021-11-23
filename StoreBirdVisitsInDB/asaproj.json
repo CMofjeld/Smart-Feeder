@@ -1,0 +1,26 @@
+{
+    "name": "StoreBirdVisitsInDB",
+    "startFile": "StreamAnalytics.asaql",
+    "configurations": [
+        {
+            "filePath": "Inputs/Devices.json",
+            "subType": "Input"
+        },
+        {
+            "filePath": "Inputs/Species.json",
+            "subType": "Input"
+        },
+        {
+            "filePath": "Outputs/VisitsTable.json",
+            "subType": "Output"
+        },
+        {
+            "filePath": "Inputs/SmartFeederHub.json",
+            "subType": "Input"
+        },
+        {
+            "filePath": "JobConfig.json",
+            "subType": "JobConfig"
+        }
+    ]
+}

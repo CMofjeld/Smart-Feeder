@@ -1,0 +1,25 @@
+{
+    "ScriptType": "JobConfig",
+    "DataLocale": "en-US",
+    "OutputErrorPolicy": "Retry",
+    "EventsLateArrivalMaxDelayInSeconds": 5,
+    "EventsOutOfOrderMaxDelayInSeconds": 0,
+    "EventsOutOfOrderPolicy": "Adjust",
+    "StreamingUnits": 3,
+    "CompatibilityLevel": "1.2",
+    "UseSystemAssignedIdentity": false,
+    "GlobalStorage": {
+        "AccountName": "smartfeederstorage",
+        "AccountKey": null,
+        "AuthenticationMode": "ConnectionString"
+    },
+    "ContentStoragePolicy": "SystemAccount",
+    "CustomCodeStorage": {
+        "AccountName": "smartfeederstorage",
+        "AccountKey": null,
+        "ContainerName": "analyticscustomcode",
+        "Path": "UserCustomCode.zip"
+    },
+    "DataSourceCredentialDomain": "1fb2d015-b849-4a8b-a14f-57f551d3d6ce.StreamAnalystics",
+    "Tags": {}
+}

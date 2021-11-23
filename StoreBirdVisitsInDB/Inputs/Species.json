@@ -1,0 +1,17 @@
+{
+    "Name": "Species",
+    "Type": "Reference data",
+    "DataSourceType": "SQL Database",
+    "SqlReferenceProperties": {
+        "Database": "SmartFeederDB",
+        "Server": "smartfeederdbserver.database.windows.net",
+        "User": "smartfeederdbadmin",
+        "Password": null,
+        "FullSnapshotPath": "Species.snapshot.sql",
+        "RefreshType": "Execute only once",
+        "RefreshRate": "00:00:00",
+        "DeltaSnapshotPath": null
+    },
+    "DataSourceCredentialDomain": null,
+    "ScriptType": "Input"
+}

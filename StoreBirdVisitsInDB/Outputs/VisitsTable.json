@@ -1,0 +1,16 @@
+{
+    "Name": "VisitsTable",
+    "DataSourceType": "SQL Database",
+    "SQLDatabaseProperties": {
+        "Database": "SmartFeederDB",
+        "Server": "smartfeederdbserver.database.windows.net",
+        "User": "smartfeederdbadmin",
+        "Password": null,
+        "Table": "dbo.visits",
+        "MaxWriterCount": 1,
+        "MaxBatchCount": 10000,
+        "AuthenticationMode": "ConnectionString"
+    },
+    "DataSourceCredentialDomain": null,
+    "ScriptType": "Output"
+}

@@ -1,0 +1,21 @@
+WITH Step1 as (
+	SELECT SmartFeederHub.visiting_bird as visiting_bird, 
+        SmartFeederHub.visited_at as visited_at,
+        SmartFeederHub.latitude as latitude,
+        SmartFeederHub.longitude as longitude,
+        Devices.id as device_id
+	FROM SmartFeederHub
+	JOIN Devices ON Devices.device_name = SmartFeederHub.device_id
+)
+
+SELECT
+	Species.id as visiting_bird,
+    Step1.device_id as device_id,
+    Step1.visited_at as visited_at,
+    Step1.latitude as latitude,
+    Step1.longitude as longitude
+INTO
+	VisitsTable
+FROM
+	Step1
+JOIN Species ON Species.common_name = Step1.visiting_bird;
