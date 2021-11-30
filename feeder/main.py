@@ -7,16 +7,22 @@
 import os
 import asyncio
 from six.moves import input
-import threading
 from azure.iot.device.aio import IoTHubDeviceClient
+from azure.iot.device import MethodResponse
 import board
 import busio
 import adafruit_vl53l0x
+import RPi.GPIO as GPIO
 
 # Default config values for feeder
-DEFAULT_MAX_DIST = 120
-DEFAULT_MIN_DIST = 90
-DEFAULT_FOOD_POLL = 5
+MAX_DIST = 120
+MIN_DIST = 90
+FOOD_POLL = 5
+
+# Default config values for alarm
+BUZZER_PIN = 26
+ALARM_INTERVAL = 0.5
+ALARM_REPS = 5 
 
 class DistanceSensor:
     def __init__(self):
@@ -27,20 +33,39 @@ class DistanceSensor:
         return self.sensor.range
 
 
+class Alarm:
+    def __init__(self, buzzer_pin=BUZZER_PIN) -> None:
+        self.buzzer_pin = buzzer_pin
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(buzzer_pin, GPIO.OUT, initial=GPIO.LOW)
+        self.sounding_alarm = False
+
+    async def sound_alarm(self, interval=ALARM_INTERVAL, repetitions=ALARM_REPS):
+        if not self.sounding_alarm:
+            self.sounding_alarm = True
+            for _ in range(repetitions):
+                GPIO.output(self.buzzer_pin, GPIO.HIGH)
+                await asyncio.sleep(interval)
+                GPIO.output(self.buzzer_pin, GPIO.LOW)
+                await asyncio.sleep(interval)
+            self.sounding_alarm = False
+
+
 class Feeder:
-    def __init__(self, max_food_distance, min_food_distance, food_poll_interval) -> None:
+    def __init__(self, max_food_distance, min_food_distance, food_poll_interval, buzzer_pin=BUZZER_PIN) -> None:
         self.distance_sensor = DistanceSensor()
         self.max_food_distance = max_food_distance
         self.min_food_distance = min_food_distance
         self.max_food_height = max_food_distance - min_food_distance
         self.food_poll_interval = food_poll_interval
         self.update_food_level()
+        self.alarm = Alarm(buzzer_pin)
 
     def update_food_level(self):
         cur_distance = self.distance_sensor.range()
         cur_height = self.max_food_distance - cur_distance
         calculated_food_level = cur_height / self.max_food_height
-        self.food_level = min(calculated_food_level, 1.0)
+        self.food_level = max(min(calculated_food_level, 1.0), 0.0)
 
     def get_food_level(self):
         return self.food_level
@@ -54,6 +79,9 @@ class Feeder:
             reported_level = {"foodLevel": self.food_level}
             await client.patch_twin_reported_properties(reported_level)
             await asyncio.sleep(self.food_poll_interval)
+
+    async def sound_alarm(self):
+        await self.alarm.sound_alarm()
 
 
 def get_desired_prop(desired_prop_dict, prop_dict_key, prop_env_key, prop_default):
@@ -91,20 +119,49 @@ async def main():
         distance_config = twin["desired"]["distanceConfig"]
     else:
         distance_config = {}
-    max_food_distance = get_desired_prop(distance_config, "maxFoodDistance", "MAX_FOOD_DIST", DEFAULT_MAX_DIST)
-    min_food_distance = get_desired_prop(distance_config, "minFoodDistance", "MIN_FOOD_DIST", DEFAULT_MIN_DIST)
-    food_poll_interval = get_desired_prop(distance_config, "foodPollInterval", "FOOD_POLL_INT", DEFAULT_FOOD_POLL)
+    max_food_distance = get_desired_prop(distance_config, "maxFoodDistance", "MAX_FOOD_DIST", MAX_DIST)
+    min_food_distance = get_desired_prop(distance_config, "minFoodDistance", "MIN_FOOD_DIST", MIN_DIST)
+    food_poll_interval = get_desired_prop(distance_config, "foodPollInterval", "FOOD_POLL_INT", FOOD_POLL)
 
     # create the feeder object
     feeder = Feeder(max_food_distance, min_food_distance, food_poll_interval)
 
     # define behavior for receiving a twin patch
     # NOTE: this could be a function or a coroutine
-    def twin_patch_handler(patch):
-        print("the data in the desired properties patch was: {}".format(patch))
+    async def twin_patch_handler(patch):
+        if "distanceConfig" in patch:
+            distance_config = patch["distanceConfig"]
+            if "foodPollInterval" in distance_config:
+                new_interval = distance_config["foodPollInterval"]
+                print(f"Updating food poll interval to {new_interval}")
+                feeder.set_food_pool_interval(new_interval)
+                report = {"foodPollInterval": new_interval}
+                await device_client.patch_twin_reported_properties(report)
+        else:
+            print("Updating unknown desired property.")
+            await device_client.patch_twin_reported_properties(patch)
 
     # set the twin patch handler on the client
     device_client.on_twin_desired_properties_patch_received = twin_patch_handler
+
+    # Define behavior for handling methods
+    async def method_request_handler(method_request):
+        # Determine how to respond to the method request based on the method name
+        if method_request.name == "sound_alarm":
+            payload = {"result": True, "data": "sounded alarm"}  # set response payload
+            status = 200  # set return status code
+            print("Sounding alarm")
+            asyncio.create_task(feeder.sound_alarm())
+        else:
+            payload = {"result": False, "data": "unknown method"}  # set response payload
+            status = 400  # set return status code
+            print("Received request for unknown method: " + method_request.name)
+        # Send the response
+        method_response = MethodResponse.create_from_method_request(method_request, status, payload)
+        await device_client.send_method_response(method_response)
+
+    # Set the method request handler on the client
+    device_client.on_method_request_received = method_request_handler
 
     # report current properties
     await report_feeder_properties(feeder, device_client)
