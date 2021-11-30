@@ -1,4 +1,2 @@
 requests.http
 set_env.ps1
-event_conn.py
-get_twin.py
