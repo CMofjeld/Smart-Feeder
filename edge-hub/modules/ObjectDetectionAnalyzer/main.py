@@ -46,12 +46,6 @@ def create_client():
         # NOTE: This function only handles messages sent to "input1".
         # Messages sent to other inputs, or to the default, will be discarded
         if message.input_name == "detection_messages":
-            # print("the data in the message received on input1 was ")
-            # print(message.data)
-            # print("custom properties are")
-            # print(message.custom_properties)
-            # print("forwarding mesage to output1")
-            # await client.send_message_to_output(message, "output1")
             # Parse message as JSON
             message_dict = json.loads(message.data)
 
@@ -68,22 +62,33 @@ def create_client():
             tracking_id = object["id"]
 
             # Print summary
-            if "bird" in object:
-                # Send message if the tracking duration exceeds the threshold
-                global object_tracker
-                global tracking_duration_threshold
-                if object_tracker.contains(tracking_id):
-                    tracking_info = object_tracker.get_tracking_info(tracking_id)
-                    tracking_duration = datetime.datetime.now() - tracking_info.arrival_time
-                    if tracking_duration >= tracking_duration_threshold and not tracking_info.message_sent:
-                        # Set message_sent to True to prevent duplicate messages
-                        tracking_info.message_sent = True
+            # Send message if the tracking duration exceeds the threshold
+            global object_tracker
+            global tracking_duration_threshold
+            if object_tracker.contains(tracking_id):
+                tracking_info = object_tracker.get_tracking_info(tracking_id)
+                tracking_duration = datetime.datetime.now() - tracking_info.arrival_time
+                if tracking_duration >= tracking_duration_threshold and not tracking_info.message_sent:
+                    # Set message_sent to True to prevent duplicate messages
+                    tracking_info.message_sent = True
 
+                    unwanted_visitors = {"cat", "dog", "bear"}
+                    if "bird" in object:
                         # Send message indicating a visit from a bird
                         output_message = construct_bird_visit_message(message_dict, tracking_info.arrival_time.isoformat())
                         await client.send_message_to_output(output_message, "bird_visits")
-                else:
-                    object_tracker.start_tracking(tracking_id)
+                    elif not set(object).isdisjoint(unwanted_visitors):
+                        # Unwanted visitor - sound the alarm on the feeder
+                        device_id = message_dict["sensor"]["id"]
+                        method_params = {
+                            "methodName": "sound_alarm",
+                            "responseTimeoutInSeconds": 30,
+                            "connectTimeoutInSeconds": 20,
+                            "payload": {}
+                        }
+                        await client.invoke_method(method_params, device_id)
+            else:
+                object_tracker.start_tracking(tracking_id)
 
     try:
         # Set handler on the client
