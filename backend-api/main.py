@@ -1,22 +1,36 @@
 import asyncio
-import json
 import os
 
 from azure.eventhub.aio import EventHubConsumerClient
 from azure.iot.hub import IoTHubRegistryManager
-from azure.iot.hub.models import Twin
-from fastapi import FastAPI, HTTPException, WebSocket
+from fastapi import FastAPI, HTTPException, WebSocket, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
 from msrest.exceptions import HttpOperationError
+from sqlalchemy.orm import Session
+from crud import get_top_visiting_birds
+from database import SessionLocal, engine, Base
 
-app = FastAPI()
 
 # Configuration
 EVENT_CONNECTION_STR = os.getenv("EVENT_CONNECTION_STR")
 REGISTRY_CONNECTION_STR = os.getenv("REGISTRY_CONNECTION_STR")
 EVENTHUB_NAME = os.getenv("EVENTHUB_NAME")
 CONSUMER_GROUP = os.getenv("CONSUMER_GROUP")
+
+# App
+app = FastAPI()
+
+
+# Database
+Base.metadata.create_all(bind=engine)
+def get_db():
+    """Return a database session and close it afterward."""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 
 # Websocket
 websockets = {} # maps device IDs to websocket clients waiting for updates for that device
@@ -76,3 +90,9 @@ async def websocket_endpoint(websocket: WebSocket, device_id: str):
     while True:
         data = await websocket.receive_text()
         await websocket.send_text(data)
+
+
+@app.get("/visits/top_species")
+def get_top_species(limit: int = 10, db: Session = Depends(get_db)):
+    top_species = get_top_visiting_birds(db=db, limit=limit)
+    return top_species
