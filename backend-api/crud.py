@@ -1,7 +1,9 @@
 """Functions to perform CRUD operations on the database."""
 from sqlalchemy import desc, func
 from sqlalchemy.orm import Session
+
 from models import Bird, Visit
+
 
 def get_top_visiting_birds(db: Session, limit: int = 10):
     """Return the top visiting birds and their visit count."""

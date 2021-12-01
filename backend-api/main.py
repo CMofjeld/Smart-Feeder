@@ -3,13 +3,13 @@ import os
 
 from azure.eventhub.aio import EventHubConsumerClient
 from azure.iot.hub import IoTHubRegistryManager
-from fastapi import FastAPI, HTTPException, WebSocket, Depends
+from fastapi import Depends, FastAPI, HTTPException, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from msrest.exceptions import HttpOperationError
 from sqlalchemy.orm import Session
-from crud import get_top_visiting_birds
-from database import SessionLocal, engine, Base
 
+from crud import get_top_visiting_birds
+from database import Base, SessionLocal, engine
 
 # Configuration
 EVENT_CONNECTION_STR = os.getenv("EVENT_CONNECTION_STR")
