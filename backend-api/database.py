@@ -16,7 +16,8 @@ DB_NAME = os.getenv("DB_NAME")
 DB_USERNAME = os.getenv("DB_USERNAME")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_DRIVER = os.getenv("DB_DRIVER")
-connection_string = 'DRIVER='+DB_DRIVER+';SERVER=tcp:'+DB_SERVER+';PORT=1433;DATABASE='+DB_NAME+';UID='+DB_USERNAME+';PWD='+DB_PASSWORD
+DB_PORT = os.getenv("DB_PORT")
+connection_string = 'DRIVER='+DB_DRIVER+';SERVER=tcp:'+DB_SERVER+';PORT='+DB_PORT+';DATABASE='+DB_NAME+';UID='+DB_USERNAME+';PWD='+DB_PASSWORD
 connection_url = URL.create("mssql+pyodbc", query={"odbc_connect": connection_string})
 engine = create_engine(connection_url)
 
