@@ -4,7 +4,7 @@ from sqlalchemy.dialects.mssql import DATETIME2
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.schema import ForeignKey
 
-from database import Base
+from app.database import Base
 
 
 class Device(Base):

@@ -1,2 +1,3 @@
 requests.http
 set_env.ps1
+.env-linux

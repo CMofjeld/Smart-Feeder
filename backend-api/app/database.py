@@ -27,3 +27,4 @@ SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False) # wh
 ## ORM classes
 # Create base class to inherit from
 Base = declarative_base()
+
