@@ -92,7 +92,7 @@ async def websocket_endpoint(websocket: WebSocket, device_id: str):
         await websocket.send_text(data)
 
 
-@app.get("/visits/top_species")
+@app.get("/visits/topSpecies")
 def get_top_species(limit: int = 10, db: Session = Depends(get_db)):
     top_species = get_top_visiting_birds(db=db, limit=limit)
-    return top_species
+    return {"topSpecies": top_species}
