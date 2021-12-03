@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">VideoPlayer</string>
+    <string name="title_activity_main">VideoPlayer</string>
+    <string name="package_name">io.ionic.VideoPlayer</string>
+    <string name="custom_url_scheme">io.ionic.VideoPlayer</string>
+</resources>
