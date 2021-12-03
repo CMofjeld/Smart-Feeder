@@ -1,5 +1,5 @@
 """Pydantic models for parsing data from and returning data to API requests."""
-from typing import List, Optional
+from typing import List
 from pydantic import BaseModel
 
 
