@@ -7,14 +7,27 @@ from sqlalchemy.sql.schema import ForeignKey
 from app.database import Base
 
 
+class User(Base):
+    """User entry."""
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True)
+    username = Column(String, unique=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
+
+    devices = relationship("Device", back_populates="user")
+
+
 class Device(Base):
     """Smart feeder."""
     __tablename__ = "devices"
 
     id = Column(Integer, primary_key=True)
     device_name = Column(String(50), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"))
 
     visits = relationship("Visit", back_populates="device")
+    user = relationship("User", back_populates="devices")
 
 class Bird(Base):
     """Bird species."""

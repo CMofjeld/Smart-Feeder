@@ -8,8 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from msrest.exceptions import HttpOperationError
 from sqlalchemy.orm import Session
 
-from app.crud import get_top_visiting_birds
 from app.database import Base, SessionLocal, engine
+from app import schemas, crud
 
 # Configuration
 EVENT_CONNECTION_STR = os.getenv("EVENT_CONNECTION_STR")
@@ -94,5 +94,15 @@ async def websocket_endpoint(websocket: WebSocket, device_id: str):
 
 @app.get("/visits/topSpecies")
 def get_top_species(limit: int = 10, db: Session = Depends(get_db)):
-    top_species = get_top_visiting_birds(db=db, limit=limit)
+    top_species = crud.get_top_visiting_birds(db=db, limit=limit)
     return {"topSpecies": top_species}
+
+
+@app.get("/users/{username}", response_model=schemas.User)
+def read_user_by_username(username: str, db: Session = Depends(get_db)):
+    print(f"Username: {username}")
+    db_user = crud.get_user_by_username(db=db, username=username)
+    if db_user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    print(db_user)
+    return db_user
