@@ -3,13 +3,15 @@ import os
 
 from azure.eventhub.aio import EventHubConsumerClient
 from azure.iot.hub import IoTHubRegistryManager
-from fastapi import Depends, FastAPI, HTTPException, WebSocket
+from fastapi import Depends, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from msrest.exceptions import HttpOperationError
 from sqlalchemy.orm import Session
+from fastapi.security import OAuth2PasswordRequestForm
+from datetime import timedelta
 
 from app.database import Base, SessionLocal, engine
-from app import schemas, crud
+from app import schemas, crud, auth
 
 # Configuration
 EVENT_CONNECTION_STR = os.getenv("EVENT_CONNECTION_STR")
@@ -72,7 +74,7 @@ app.add_middleware(
 hub_registry_manager = IoTHubRegistryManager.from_connection_string(REGISTRY_CONNECTION_STR)
 
 # Routes
-@app.get("/devices/{device_id}/foodLevel")
+@app.get("/devices/{device_id}/foodLevel", dependencies=[Depends(auth.validate_token)])
 def getFoodLevel(device_id: str):
     try:
         twin = hub_registry_manager.get_twin(device_id)
@@ -85,24 +87,39 @@ def getFoodLevel(device_id: str):
 async def websocket_endpoint(websocket: WebSocket, device_id: str):
     await websocket.accept()
     print(f"Accepted connection for {device_id}")
-    await websocket.send_text(f"Listening for notifications for: {device_id}")
     websockets[device_id] = websocket
-    while True:
-        data = await websocket.receive_text()
-        await websocket.send_text(data)
+    try:
+        while True:
+            await websocket.receive_text() # detect when client disconnects
+    except WebSocketDisconnect:
+        del websockets[device_id]
 
 
-@app.get("/visits/topSpecies")
+@app.get("/visits/topSpecies", dependencies=[Depends(auth.validate_token)])
 def get_top_species(limit: int = 10, db: Session = Depends(get_db)):
     top_species = crud.get_top_visiting_birds(db=db, limit=limit)
     return {"topSpecies": top_species}
 
 
-@app.get("/users/{username}", response_model=schemas.User)
+@app.get("/users/{username}", response_model=schemas.User, dependencies=[Depends(auth.validate_token)])
 def read_user_by_username(username: str, db: Session = Depends(get_db)):
-    print(f"Username: {username}")
     db_user = crud.get_user_by_username(db=db, username=username)
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
-    print(db_user)
     return db_user
+
+
+@app.post("/token", response_model=auth.Token)
+async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    user = auth.authenticate_user(db, form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = auth.create_access_token(
+        data={"sub": user.username}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
