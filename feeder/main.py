@@ -15,8 +15,8 @@ import adafruit_vl53l0x
 import RPi.GPIO as GPIO
 
 # Default config values for feeder
-MAX_DIST = 128
-MIN_DIST = 90
+MAX_DIST = 138
+MIN_DIST = 110
 FOOD_POLL = 5
 
 # Default config values for alarm
