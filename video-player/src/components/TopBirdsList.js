@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import ApiHelper from '../helpers/ApiHelper';
-import { ListGroup, ListGroupItem } from 'react-bootstrap';
+import { Button, ListGroup, ListGroupItem } from 'react-bootstrap';
 
 const TopBirdsList = props => {
     const [topBirds, setTopBirds] = useState([]);
@@ -32,6 +32,7 @@ const TopBirdsList = props => {
                     <ListGroupItem>{bird.common_name} : {bird.num_visits}</ListGroupItem>
                 ))}
             </ListGroup>
+            <Button variant="primary" onClick={updateTopBirds}>Refresh</Button>
         </div>
     );
 };
