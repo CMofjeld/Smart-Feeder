@@ -15,7 +15,7 @@ import adafruit_vl53l0x
 import RPi.GPIO as GPIO
 
 # Default config values for feeder
-MAX_DIST = 120
+MAX_DIST = 128
 MIN_DIST = 90
 FOOD_POLL = 5
 
@@ -23,6 +23,7 @@ FOOD_POLL = 5
 BUZZER_PIN = 26
 ALARM_INTERVAL = 0.5
 ALARM_REPS = 5 
+UNWELCOME_VISITORS = ["bear", "cat", "dog"]
 
 class DistanceSensor:
     def __init__(self):
@@ -52,7 +53,7 @@ class Alarm:
 
 
 class Feeder:
-    def __init__(self, max_food_distance, min_food_distance, food_poll_interval, buzzer_pin=BUZZER_PIN) -> None:
+    def __init__(self, max_food_distance, min_food_distance, food_poll_interval, buzzer_pin=BUZZER_PIN, unwelcome_visitors=[]) -> None:
         self.distance_sensor = DistanceSensor()
         self.max_food_distance = max_food_distance
         self.min_food_distance = min_food_distance
@@ -60,6 +61,7 @@ class Feeder:
         self.food_poll_interval = food_poll_interval
         self.update_food_level()
         self.alarm = Alarm(buzzer_pin)
+        self.set_unwelcome_visitors(unwelcome_visitors)
 
     def update_food_level(self):
         cur_distance = self.distance_sensor.range()
@@ -72,6 +74,9 @@ class Feeder:
 
     def set_food_pool_interval(self, new_interval):
         self.food_poll_interval = new_interval
+
+    def set_unwelcome_visitors(self, new_unwelcome_visitors):
+        self.unwelcome_visitors = set(new_unwelcome_visitors)
 
     async def send_periodic_food_level_updates(self, client):
         while True:
@@ -98,7 +103,8 @@ async def report_feeder_properties(feeder, client):
             "minFoodDistance": feeder.min_food_distance,
             "foodPollInterval": feeder.food_poll_interval,
         },
-        "foodLevel": feeder.food_level
+        "foodLevel": feeder.food_level,
+        "unwelcomeVisitors": list(feeder.unwelcome_visitors)
     }
     await client.patch_twin_reported_properties(report)
 
@@ -122,9 +128,13 @@ async def main():
     max_food_distance = get_desired_prop(distance_config, "maxFoodDistance", "MAX_FOOD_DIST", MAX_DIST)
     min_food_distance = get_desired_prop(distance_config, "minFoodDistance", "MIN_FOOD_DIST", MIN_DIST)
     food_poll_interval = get_desired_prop(distance_config, "foodPollInterval", "FOOD_POLL_INT", FOOD_POLL)
+    unwelcome_visitors = get_desired_prop(twin, "unwelcomeVisitors", "UNWELCOME_VISITORS", UNWELCOME_VISITORS)
+    if type(unwelcome_visitors) == str:
+        # Got list of unwelcome visitors from environment variable - need to parse into a list
+        unwelcome_visitors = unwelcome_visitors.split(",")
 
     # create the feeder object
-    feeder = Feeder(max_food_distance, min_food_distance, food_poll_interval)
+    feeder = Feeder(max_food_distance, min_food_distance, food_poll_interval, unwelcome_visitors=unwelcome_visitors)
 
     # define behavior for receiving a twin patch
     # NOTE: this could be a function or a coroutine
@@ -135,11 +145,13 @@ async def main():
                 new_interval = distance_config["foodPollInterval"]
                 print(f"Updating food poll interval to {new_interval}")
                 feeder.set_food_pool_interval(new_interval)
-                report = {"foodPollInterval": new_interval}
-                await device_client.patch_twin_reported_properties(report)
+        if "unwelcomeVisitors" in patch:
+            unwelcome_visitors = patch["unwelcomeVisitors"]
+            print(f"Updating unwelcome visitors to {unwelcome_visitors}")
+            feeder.set_unwelcome_visitors(unwelcome_visitors)
         else:
             print("Updating unknown desired property.")
-            await device_client.patch_twin_reported_properties(patch)
+        await device_client.patch_twin_reported_properties(patch)
 
     # set the twin patch handler on the client
     device_client.on_twin_desired_properties_patch_received = twin_patch_handler
@@ -147,11 +159,19 @@ async def main():
     # Define behavior for handling methods
     async def method_request_handler(method_request):
         # Determine how to respond to the method request based on the method name
-        if method_request.name == "sound_alarm":
-            payload = {"result": True, "data": "sounded alarm"}  # set response payload
+        if method_request.name == "checkIfVisitorUnwelcome":
+            object = method_request.payload
+            if not set(object).isdisjoint(feeder.unwelcome_visitors):
+                # Unwelcome visitor - sound the alarm
+                data = "Visitor unwelcome - sounding alarm"
+                print("Sounding alarm")
+                #asyncio.create_task(feeder.sound_alarm())
+            else:
+                # Visitor not unwelcome - do nothing
+                data = "Visitor not unwelcome - not sounding alarm"
+                print("Visitor not unwelcome - not sounding alarm")
+            payload = {"result": True, "data": data}
             status = 200  # set return status code
-            print("Sounding alarm")
-            asyncio.create_task(feeder.sound_alarm())
         else:
             payload = {"result": False, "data": "unknown method"}  # set response payload
             status = 400  # set return status code

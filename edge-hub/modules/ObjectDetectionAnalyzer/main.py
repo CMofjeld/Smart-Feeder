@@ -72,19 +72,18 @@ def create_client():
                     # Set message_sent to True to prevent duplicate messages
                     tracking_info.message_sent = True
 
-                    unwanted_visitors = {"cat", "dog", "bear"}
                     if "bird" in object:
                         # Send message indicating a visit from a bird
                         output_message = construct_bird_visit_message(message_dict, tracking_info.arrival_time.isoformat())
                         await client.send_message_to_output(output_message, "bird_visits")
-                    elif not set(object).isdisjoint(unwanted_visitors):
-                        # Unwanted visitor - sound the alarm on the feeder
+                    else:
+                        # Non-bird visitor - alert the feeder in case they're unwelcome
                         device_id = message_dict["sensor"]["id"]
                         method_params = {
-                            "methodName": "sound_alarm",
+                            "methodName": "checkIfVisitorUnwelcome",
                             "responseTimeoutInSeconds": 30,
                             "connectTimeoutInSeconds": 20,
-                            "payload": {}
+                            "payload": object
                         }
                         await client.invoke_method(method_params, device_id)
             else:
