@@ -4,6 +4,7 @@ import HomeTab from './components/HomeTab';
 import StatsTab from './components/StatsTab';
 import LoginForm from './components/LoginForm';
 import ApiHelper from './helpers/ApiHelper';
+import SettingsTab from './components/SettingsTab';
 import { Tab, Row, Nav, Col } from 'react-bootstrap';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -56,6 +57,9 @@ function App() {
               <Nav.Item>
                 <Nav.Link eventKey="third">Stats</Nav.Link>
               </Nav.Item>
+              <Nav.Item>
+                <Nav.Link eventKey="fourth">Settings</Nav.Link>
+              </Nav.Item>
             </Nav>
           </Col>
           <Col sm={10}>
@@ -68,6 +72,9 @@ function App() {
               </Tab.Pane>
               <Tab.Pane eventKey="third">
                 <StatsTab token={apiToken} apiBaseUrl={BACKEND_API_BASE_URL} show={true}/> 
+              </Tab.Pane>
+              <Tab.Pane eventKey="fourth">
+                <SettingsTab token={apiToken} apiBaseUrl={BACKEND_API_BASE_URL} deviceID={deviceID}/> 
               </Tab.Pane>
             </Tab.Content>
           </Col>
