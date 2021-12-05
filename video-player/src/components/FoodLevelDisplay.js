@@ -47,12 +47,12 @@ const FoodLevelDisplay = props => {
     return (
         <div className="foodLevelDisplay">
             <h3>Food Level</h3>
-            <ProgressBar now={foodLevel * 100} label={`${foodLevel * 100}%`} />
+            <ProgressBar now={foodLevel * 100} label={`${parseInt(foodLevel * 100)}%`} />
             <Modal show={showModal} onHide={handleCloseModal}>
                 <Modal.Header closeButton>
                     <Modal.Title>Low food alert</Modal.Title>
                 </Modal.Header>
-                <Modal.Body>Warning, feeder food level is at {`${foodLevel * 100}%`}</Modal.Body>
+                <Modal.Body>Warning, feeder food level is at {`${parseInt(foodLevel * 100)}%`}</Modal.Body>
             </Modal>
         </div>
     )
