@@ -19,3 +19,6 @@ class User(BaseModel):
 
     class Config:
         orm_mode = True
+
+class UnwelcomeVisitorList(BaseModel):
+    unwelcomeVisitors: List[str]

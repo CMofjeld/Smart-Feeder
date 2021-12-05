@@ -1,8 +1,10 @@
 import asyncio
 import os
+from typing import List
 
 from azure.eventhub.aio import EventHubConsumerClient
 from azure.iot.hub import IoTHubRegistryManager
+from azure.iot.hub.models import Twin, TwinProperties
 from fastapi import Depends, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from msrest.exceptions import HttpOperationError
@@ -79,6 +81,26 @@ def getFoodLevel(device_id: str):
     try:
         twin = hub_registry_manager.get_twin(device_id)
         return {"foodLevel": twin.properties.reported["foodLevel"]}
+    except HttpOperationError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=e.response.reason)
+
+
+@app.get("/devices/{device_id}/unwelcomeVisitors", dependencies=[Depends(auth.validate_token)])
+def read_device_unwelcome_visitors(device_id: str):
+    try:
+        twin = hub_registry_manager.get_twin(device_id)
+        return {"unwelcomeVisitors": twin.properties.reported["unwelcomeVisitors"]}
+    except HttpOperationError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=e.response.reason)
+
+
+@app.post("/devices/{device_id}/unwelcomeVisitors", dependencies=[Depends(auth.validate_token)])
+def update_device_unwelcome_visitors(device_id: str, unwelcome_visitors: schemas.UnwelcomeVisitorList):
+    try:
+        twin_patch = Twin()
+        twin_patch.properties = TwinProperties(desired=unwelcome_visitors.dict())
+        updated_twin = hub_registry_manager.update_twin(device_id, twin_patch)
+        return updated_twin.properties.desired
     except HttpOperationError as e:
         raise HTTPException(status_code=e.response.status_code, detail=e.response.reason)
 
