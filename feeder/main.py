@@ -128,7 +128,7 @@ async def main():
     max_food_distance = get_desired_prop(distance_config, "maxFoodDistance", "MAX_FOOD_DIST", MAX_DIST)
     min_food_distance = get_desired_prop(distance_config, "minFoodDistance", "MIN_FOOD_DIST", MIN_DIST)
     food_poll_interval = get_desired_prop(distance_config, "foodPollInterval", "FOOD_POLL_INT", FOOD_POLL)
-    unwelcome_visitors = get_desired_prop(twin, "unwelcomeVisitors", "UNWELCOME_VISITORS", UNWELCOME_VISITORS)
+    unwelcome_visitors = get_desired_prop(twin["desired"], "unwelcomeVisitors", "UNWELCOME_VISITORS", UNWELCOME_VISITORS)
     if type(unwelcome_visitors) == str:
         # Got list of unwelcome visitors from environment variable - need to parse into a list
         unwelcome_visitors = unwelcome_visitors.split(",")
@@ -151,7 +151,7 @@ async def main():
             feeder.set_unwelcome_visitors(unwelcome_visitors)
         else:
             print("Updating unknown desired property.")
-        await device_client.patch_twin_reported_properties(patch)
+        await report_feeder_properties(feeder, device_client)
 
     # set the twin patch handler on the client
     device_client.on_twin_desired_properties_patch_received = twin_patch_handler
