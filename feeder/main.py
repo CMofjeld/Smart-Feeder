@@ -15,7 +15,7 @@ import adafruit_vl53l0x
 import RPi.GPIO as GPIO
 
 # Default config values for feeder
-MAX_DIST = 138
+MAX_DIST = 135
 MIN_DIST = 110
 FOOD_POLL = 5
 
@@ -29,6 +29,7 @@ class DistanceSensor:
     def __init__(self):
         i2c = busio.I2C(board.SCL, board.SDA)
         self.sensor = adafruit_vl53l0x.VL53L0X(i2c)
+        self.sensor.measurement_timing_budget = 800000
     
     def range(self):
         return self.sensor.range
@@ -165,7 +166,7 @@ async def main():
                 # Unwelcome visitor - sound the alarm
                 data = "Visitor unwelcome - sounding alarm"
                 print("Sounding alarm")
-                #asyncio.create_task(feeder.sound_alarm())
+                asyncio.create_task(feeder.sound_alarm())
             else:
                 # Visitor not unwelcome - do nothing
                 data = "Visitor not unwelcome - not sounding alarm"
