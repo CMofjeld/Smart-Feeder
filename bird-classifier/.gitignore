@@ -1,0 +1,4 @@
+./data/*
+./classification/*
+./ngccli/*
+./detectnet_v2/*
