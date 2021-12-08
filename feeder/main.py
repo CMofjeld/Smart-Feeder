@@ -1,3 +1,9 @@
+"""Controls the distance sensor and buzzer attached to the bird feeder and communicates with the IoT Hub.
+
+This code used the Azure IoT Hub sample code found at this URL as a starting point:
+https://github.com/Azure/azure-iot-sdk-python/blob/main/azure-iot-device/samples/async-hub-scenarios/receive_twin_desired_properties_patch.py
+The original copyright notice is preserved below.
+"""
 # -------------------------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License. See License.txt in the project root for
@@ -13,6 +19,7 @@ import board
 import busio
 import adafruit_vl53l0x
 import RPi.GPIO as GPIO
+import datetime
 
 # Default config values for feeder
 MAX_DIST = 135
@@ -165,12 +172,12 @@ async def main():
             if not set(object).isdisjoint(feeder.unwelcome_visitors):
                 # Unwelcome visitor - sound the alarm
                 data = "Visitor unwelcome - sounding alarm"
-                print("Sounding alarm")
-                asyncio.create_task(feeder.sound_alarm())
+                print(f"Sounding alarm at {datetime.datetime.today()}")
+                #asyncio.create_task(feeder.sound_alarm())
             else:
                 # Visitor not unwelcome - do nothing
                 data = "Visitor not unwelcome - not sounding alarm"
-                print("Visitor not unwelcome - not sounding alarm")
+                print(f"Visitor not unwelcome - not sounding alarm at {datetime.datetime.today()}")
             payload = {"result": True, "data": data}
             status = 200  # set return status code
         else:
