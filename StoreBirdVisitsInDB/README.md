@@ -1,0 +1,2 @@
+# Store Bird Visits In DB
+This directory holds the definition of an Azure Stream Analytics job that parses visit messages emitted by the [Object detection analyzer](https://github.com/CMofjeld/Smart-Feeder/tree/main/edge-hub/modules/ObjectDetectionAnalyzer) and stores them in an Azure SQL Database.
