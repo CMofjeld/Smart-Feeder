@@ -1,0 +1,13 @@
+[property]
+net-scale-factor=1.0
+offsets=103.939;116.779;123.68
+infer-dims=3;224;224
+labelfile-path=species_labels.txt
+tlt-encoded-model=vgg19_pruned.etlt
+tlt-model-key=nvidia_tlt
+network-type=1
+uff-input-order=0
+output-blob-names=predictions/Softmax
+uff-input-blob-name=input_1
+model-color-format=1
+gie-unique-id=4
